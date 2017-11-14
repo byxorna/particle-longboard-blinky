@@ -1,0 +1,22 @@
+{
+  "name": "particle-neopixel-ring-blinky",
+  "version": "1.0.0",
+  "description": "arduino code for adafruit neopixel ring blinky",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/byxorna/particle-neopixel-ring-blinky.git"
+  },
+  "author": "Gabe Conradi <gabe.conradi@gmail.com>",
+  "license": "APL2.0",
+  "bugs": {
+    "url": "https://github.com/byxorna/particle-neopixel-ring-blinky/issues"
+  },
+  "homepage": "https://github.com/byxorna/particle-neopixel-ring-blinky#readme",
+  "dependencies": {
+    "particle-cli": "^1.24.1"
+  }
+}
