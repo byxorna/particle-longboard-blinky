@@ -1,0 +1,1 @@
+- [ ] register positionInterrupt to flash red when upside down or pulse
