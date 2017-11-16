@@ -14,6 +14,8 @@
 #include "colorpalettes.h"
 #include "pixeltypes.h"
 #include "FastLED.h"
+FASTLED_USING_NAMESPACE;
+
 
 #include "LIS3DH.h"
 
@@ -21,10 +23,11 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 
 SYSTEM_THREAD(ENABLED);
 
+#define CLOCK_PIN D4
 #define NUM_LEDS_PER_STRIP 15
 #define NUM_STRIPS 2
 
-#define LED_TYPE NSFastLED::WS2812B
+#define LED_TYPE NEOPIXEL
 #define INDEX_RIGHT 1
 #define INDEX_LEFT 0
 
@@ -56,15 +59,16 @@ uint8_t gBrightness = 128; // global brightness
 uint8_t gPattern = 0; // global pattern
 uint8_t gPalette = 0; // global palette
 uint8_t gAnimIndex = 0; // animation index for ColorFromPalette
+CFastLED* gLED; // global CFastLED object
 
 unsigned long lastPrintSample = 0;
 unsigned long t_now;   // time now in each loop iteration
 unsigned long t_pattern_start = 0;   // time last pattern started
 
 // for effects that are palette based
-NSFastLED::CRGBPalette16 currentPalette; // current color palette
-NSFastLED::TBlendType currentBlending;
-NSFastLED::CRGB leds[NUM_STRIPS*NUM_LEDS_PER_STRIP]; //[NUM_STRIPS][NUM_LEDS_PER_STRIP];
+CRGBPalette16 currentPalette; // current color palette
+TBlendType currentBlending;
+CRGB leds[NUM_STRIPS*NUM_LEDS_PER_STRIP]; //[NUM_STRIPS][NUM_LEDS_PER_STRIP];
 
 void accel_positionInterruptHandler() {
   Serial.println("accelerometer position changed");
@@ -91,13 +95,14 @@ void setup() {
   // lets Initialize the accelerometer struct
   accel.getSample(accel_now);
 
-  currentPalette = NSFastLED::RainbowColors_p;
-  currentBlending = NSFastLED::LINEARBLEND;
+  currentPalette = RainbowColors_p;
+  currentBlending = LINEARBLEND;
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
-  NSFastLED::CFastLED::addLeds<LED_TYPE, D4, D0, NSFastLED::EOrder::RGB>(leds[0], NUM_LEDS_PER_STRIP);
-  NSFastLED::CFastLED::addLeds<LED_TYPE, D5, D0, NSFastLED::EOrder::RGB>(leds[NUM_LEDS_PER_STRIP], NUM_LEDS_PER_STRIP);
-  NSFastLED::CFastLED::setBrightness(gBrightness);
+  gLED = new CFastLED();
+  CFastLED::addLeds<LED_TYPE, D4>(leds, NUM_LEDS_PER_STRIP);
+  CFastLED::addLeds<LED_TYPE, D5>(leds + NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+  gLED->setBrightness(gBrightness);
 
   // reset pattern
   gPattern = 0;
