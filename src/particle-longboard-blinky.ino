@@ -24,7 +24,7 @@ SYSTEM_THREAD(ENABLED);
 #define NUM_LEDS_PER_STRIP 15
 #define NUM_STRIPS 2
 
-#define LED_TYPE NSFastLED::WS2811
+#define LED_TYPE NSFastLED::WS2812B
 #define INDEX_RIGHT 1
 #define INDEX_LEFT 0
 
@@ -94,9 +94,10 @@ void setup() {
   currentPalette = NSFastLED::RainbowColors_p;
   currentBlending = NSFastLED::LINEARBLEND;
 
-  NSFastLED::FastLED.addLeds<LED_TYPE, 4>(leds[0], NUM_LEDS_PER_STRIP);
-  NSFastLED::FastLED.addLeds<LED_TYPE, 5>(leds[NUM_LEDS_PER_STRIP], NUM_LEDS_PER_STRIP);
-  NSFastLED::FastLED.setBrightness(gBrightness);
+  // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
+  NSFastLED::CFastLED::addLeds<LED_TYPE, D4, D0, NSFastLED::EOrder::RGB>(leds[0], NUM_LEDS_PER_STRIP);
+  NSFastLED::CFastLED::addLeds<LED_TYPE, D5, D0, NSFastLED::EOrder::RGB>(leds[NUM_LEDS_PER_STRIP], NUM_LEDS_PER_STRIP);
+  NSFastLED::CFastLED::setBrightness(gBrightness);
 
   // reset pattern
   gPattern = 0;
@@ -108,10 +109,13 @@ void pattern_beached_whale() {
   // pick a color, and just pulse it slowly
   // 5000ms per breath period
   uint8_t cBrightness = NSFastLED::quadwave8((millis()/5000)%256);
-  uint8_t cHue = 0;
+  uint8_t cHue = 0; //0 is red
+  NSFastLED::CHSV hsv_led = NSFastLED::CHSV(cHue, 255, cBrightness);
+  NSFastLED::CRGB rgb_led;
+  NSFastLED::hsv2rgb_rainbow(hsv_led, rgb_led);
   for( int s = 0; s < NUM_STRIPS; s++) {
     for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-      leds[s][i] = NSFastLED::CHSV(cHue, 255, cBrightness);
+      leds[s*i] = rgb_led;
     }
   }
 }
