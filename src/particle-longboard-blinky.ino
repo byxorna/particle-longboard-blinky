@@ -115,7 +115,7 @@ void pattern_beached_whale() {
   // pick a color, and just pulse it slowly
   // 5000ms per breath period
   uint8_t cBrightness = NSFastLED::quadwave8((millis()/5000)%256);
-  uint8_t cHue = 0; //0 is red
+  uint8_t cHue = (millis()/30000) /256; // cycle color wheel every 30s
   NSFastLED::CHSV hsv_led = NSFastLED::CHSV(cHue, 255, cBrightness);
   NSFastLED::CRGB rgb_led;
   NSFastLED::hsv2rgb_rainbow(hsv_led, rgb_led);
