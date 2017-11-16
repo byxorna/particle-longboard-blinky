@@ -63,7 +63,8 @@ CFastLED* gLED; // global CFastLED object
 
 unsigned long lastPrintSample = 0;
 unsigned long t_now;   // time now in each loop iteration
-unsigned long t_pattern_start = 0;   // time last pattern started
+unsigned long t_pattern_start = 0;   // time last pattern changed
+unsigned long t_palette_start = 0;   // time last palette changed
 
 // for effects that are palette based
 CRGBPalette16 currentPalette; // current color palette
@@ -161,22 +162,24 @@ void loop() {
   // increment pattern every PATTERN_CHANGE_INTERVAL_S
   if (AUTO_CHANGE_PATTERNS && (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_S*1000)) {
     gPattern++;
+    t_pattern_start = t_now;
     Serial.printlnf("pattern->%d", gPattern);
   }
 
   // increment palette every PALETTE_CHANGE_INTERVAL_S
   if (AUTO_CHANGE_PALETTE && (t_now > t_palette_start+PALETTE_CHANGE_INTERVAL_S*1000)) {
     switch(gPalette) {
-      case 0: currentPalette = NSFastLED::RainbowColors_p;  currentBlending = NSFastLED::LINEARBLEND; break;
-      case 1: currentPalette = NSFastLED::PartyColors_p;    currentBlending = NSFastLED::LINEARBLEND; break;
-      case 2: currentPalette = NSFastLED::CloudColors_p;    currentBlending = NSFastLED::LINEARBLEND; break;
-      case 3: currentPalette = NSFastLED::ForestColors_p;   currentBlending = NSFastLED::LINEARBLEND; break;
-      case 4: currentPalette = NSFastLED::OceanColors_p;    currentBlending = NSFastLED::LINEARBLEND; break;
-      case 5: currentPalette = NSFastLED::LavaColors_p;     currentBlending = NSFastLED::LINEARBLEND; break;
+      case 0: currentPalette = RainbowColors_p;  currentBlending = LINEARBLEND; break;
+      case 1: currentPalette = PartyColors_p;    currentBlending = LINEARBLEND; break;
+      case 2: currentPalette = CloudColors_p;    currentBlending = LINEARBLEND; break;
+      case 3: currentPalette = ForestColors_p;   currentBlending = LINEARBLEND; break;
+      case 4: currentPalette = OceanColors_p;    currentBlending = LINEARBLEND; break;
+      case 5: currentPalette = LavaColors_p;     currentBlending = LINEARBLEND; break;
       default:
       gPalette = 0;
       currentPalette = NSFastLED::RainbowColors_p; currentBlending = NSFastLED::LINEARBLEND; break;
     }
+    t_palette_start = t_now;
   }
 
   if (accel_lastPos == ACCEL_POSITION_UPSIDEDOWN) {
