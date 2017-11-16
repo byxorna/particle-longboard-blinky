@@ -5,7 +5,7 @@ Particle Photon arduino code for longboard LEDs
 
 ```
 # get particle-cli
-$ npm install
+$ yarn install
 ```
 
 ## Compile
