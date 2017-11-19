@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/byxorna/particle-neopixel-ring-blinky#readme",
   "dependencies": {
-    "particle-cli": "^1.24.1"
+    "particle-cli": "^1.25.0"
   }
 }

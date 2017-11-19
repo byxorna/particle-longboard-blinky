@@ -1515,7 +1515,7 @@ particle-api-js@^6.4.1:
     superagent "^2.2.0"
     superagent-prefix "0.0.2"
 
-particle-cli@^1.24.1:
+particle-cli@^1.25.0:
   version "1.25.0"
   resolved "https://registry.yarnpkg.com/particle-cli/-/particle-cli-1.25.0.tgz#225d95ed63a071477f9d619bfe113ca14ed0ac9c"
   dependencies:
