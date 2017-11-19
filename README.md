@@ -26,7 +26,7 @@ Saved firmware to: /Users/gabe/code/particle-longboard-blinky/photon_firmware_15
 ## Flash
 
 ```
-$ node_modules/particle-cli/bin/particle.js flash --usb photon_firmware_1508122560924.bin
+$ node_modules/particle-cli/bin/particle.js flash --usb $(ls -t photon_firmware*bin|head -n1)
 Found DFU device 2b04:d006
 spawning dfu-util -d 2b04:d006 -a 0 -i 0 -s 0x080A0000:leave -D photon_firmware_1508122560924.bin
 dfu-util 0.9

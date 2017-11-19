@@ -55,7 +55,7 @@ LIS3DHSPI accel(SPI, A2, WKP);
 volatile bool accel_positionInterrupt = false;
 uint8_t accel_lastPos = 0;
 
-uint8_t gBrightness = 128; // global brightness
+uint8_t gBrightness = 10; // global brightness
 uint8_t gPattern = 0; // global pattern
 uint8_t gPalette = 0; // global palette
 uint8_t gAnimIndex = 0; // animation index for ColorFromPalette
@@ -109,8 +109,8 @@ void setup() {
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
   gLED = new CFastLED();
-  CFastLED::addLeds<LED_TYPE, D4>(leds, NUM_LEDS_PER_STRIP);
-  CFastLED::addLeds<LED_TYPE, D5>(leds + NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
+  gLED->addLeds<LED_TYPE, D4>(leds, NUM_LEDS_PER_STRIP);
+  gLED->addLeds<LED_TYPE, D5>(leds + NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
   gLED->setBrightness(gBrightness);
 
   // reset pattern
@@ -230,6 +230,7 @@ void loop() {
     }
   }
 
-  FastLED.show();
-  FastLED.delay(1000 / UPDATES_PER_SECOND);
+  gLED->show();
+  delay(1000 / UPDATES_PER_SECOND);
+  //gLED->delay(1000 / UPDATES_PER_SECOND);
 }
