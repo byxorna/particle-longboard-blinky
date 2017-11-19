@@ -122,8 +122,8 @@ void setup() {
 void pattern_flipped_over() {
   // pick a color, and just pulse it slowly
   // 5000ms per breath period
-  uint8_t cBrightness = quadwave8((millis()/5000)%256);
-  uint8_t cHue = (millis()/30000) /256; // cycle color wheel every 30s
+  uint8_t cBrightness = beatsin8(12, 0, 255);
+  uint8_t cHue = beatsin8(60/30, 0, 255); // cycle colors every 30s
   CHSV hsv_led = CHSV(cHue, 255, cBrightness);
   CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
