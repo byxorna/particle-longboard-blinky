@@ -62,9 +62,17 @@ uint8_t gAnimIndex = 0; // animation index for ColorFromPalette
 CFastLED* gLED; // global CFastLED object
 
 unsigned long lastPrintSample = 0;
-unsigned long t_now;   // time now in each loop iteration
-unsigned long t_pattern_start = 0;   // time last pattern changed
-unsigned long t_palette_start = 0;   // time last palette changed
+unsigned long t_now;                // time now in each loop iteration
+unsigned long t_pattern_start = 0;  // time last pattern changed
+unsigned long t_palette_start = 0;  // time last palette changed
+
+/* BRAKING STATE VARS */
+bool braking = false;
+unsigned long t_brake;              // time braking started
+unsigned long t_brake_end;          // time braking ended
+// when we activate the brakes, hold the brake light for X ms
+// after we decide we arent braking anymore
+#define BRAKE_HOLD_MS 3000
 
 // for effects that are palette based
 CRGBPalette16 currentPalette; // current color palette
@@ -111,7 +119,7 @@ void setup() {
 }
 
 // pattern to display when we are flipped upside down
-void pattern_beached_whale() {
+void pattern_flipped_over() {
   // pick a color, and just pulse it slowly
   // 5000ms per breath period
   uint8_t cBrightness = NSFastLED::quadwave8((millis()/5000)%256);
@@ -129,10 +137,30 @@ void pattern_beached_whale() {
 void pattern_from_palette() {
   for( int s = 0; s < NUM_STRIPS; s++) {
     for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-      leds[s][i] = NSFastLED::ColorFromPalette(currentPalette, gAnimIndex, MAX_BRIGHTNESS, currentBlending);
+      leds[s*i] = NSFastLED::ColorFromPalette(currentPalette, gAnimIndex, MAX_BRIGHTNESS, currentBlending);
       gAnimIndex += 255/(NUM_LEDS_PER_STRIP*NUM_STRIPS);
     }
   }
+}
+
+void pattern_brake_light() {
+  // flicker brightness?
+  uint8_t cBrightness = 255; //quadwave8((millis()/100)%256);
+  // 0 is red hue
+  CHSV hsv_led = CHSV(0, 255, cBrightness);
+  CRGB rgb_led;
+  hsv2rgb_rainbow(hsv_led, rgb_led);
+  for (int i = 0; i < NUM_STRIPS*NUM_LEDS_PER_STRIP; ++i) {
+    leds[i] = rgb_led;
+  }
+}
+
+// determines if the global state of accelerometer xyz values
+// indicate we are agressively braking
+bool accelIsBraking() {
+  //if (accel_now.x)
+  //TODO(gabe) figure out thresholds and directions
+  return false;
 }
 
 
@@ -142,6 +170,16 @@ void loop() {
     lastPrintSample = t_now;
     if (accel.getSample(accel_now)) {
       Serial.printlnf("acc: %d,%d,%d", accel_now.x, accel_now.y, accel_now.z);
+    }
+    // handle identifying braking
+    bool brakingDetected = accelIsBraking();
+    if (!braking && brakingDetected) {
+      braking = true;
+      t_brake = t_now;
+    }
+    if (braking && !brakingDetected) {
+      braking = false;
+      t_brake_end = t_now;
     }
   }
 
@@ -183,8 +221,10 @@ void loop() {
   }
 
   if (accel_lastPos == ACCEL_POSITION_UPSIDEDOWN) {
-    // act like a beached turtle and breathe slowly
-    pattern_beached_whale();
+    // pause pattern
+    pattern_flipped_over();
+  } else if ( braking || !braking && (t_brake_end+BRAKE_HOLD_MS < t_now)) {
+    pattern_brake_light();
   } else {
     switch(gPattern) {
       case 0: pattern_from_palette();
@@ -195,9 +235,6 @@ void loop() {
     }
   }
 
-
-
-  // TODO: make dynamic? FastLED.setBrightness(gBrightness);
   NSFastLED::FastLED.show();
   NSFastLED::FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
