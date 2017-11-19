@@ -144,21 +144,14 @@ void pattern_from_palette() {
 }
 
 void pattern_brake_light() {
-  // flicker brightness?
-  uint8_t cBrightness = 255; //quadwave8((millis()/100)%256);
-  // 0 is red hue
-  CHSV hsv_led = CHSV(0, 255, cBrightness);
-  CRGB rgb_led;
-  hsv2rgb_rainbow(hsv_led, rgb_led);
   for (int i = 0; i < NUM_STRIPS*NUM_LEDS_PER_STRIP; ++i) {
-    leds[i] = rgb_led;
+    leds[i] = CRGB::Red;
   }
 }
 
 // determines if the global state of accelerometer xyz values
 // indicate we are agressively braking
 bool accelIsBraking() {
-  //if (accel_now.x)
   //TODO(gabe) figure out thresholds and directions
   return false;
 }
