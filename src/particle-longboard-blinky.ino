@@ -6,21 +6,11 @@
 */
 
 #include "Particle.h"
-
-// here be dragons. apparently arduino is picky about includes
-// so this is some magic ordering... fuck c++
-#include "led_sysdefs.h"
-#include "colorutils.h"
-#include "colorpalettes.h"
-#include "pixeltypes.h"
 #include "FastLED.h"
-FASTLED_USING_NAMESPACE;
-
-
 #include "LIS3DH.h"
 
+FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
-
 SYSTEM_THREAD(ENABLED);
 
 #define CLOCK_PIN D4
@@ -39,7 +29,6 @@ SYSTEM_THREAD(ENABLED);
 #define PALETTE_CHANGE_INTERVAL_S 15
 #define AUTO_CHANGE_PALETTE 0
 #define AUTO_CHANGE_PATTERNS 0
-
 
 // accelerometer stuff
 #define ACCEL_POSITION_NORMAL 5
