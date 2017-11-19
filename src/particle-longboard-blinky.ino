@@ -122,11 +122,11 @@ void setup() {
 void pattern_flipped_over() {
   // pick a color, and just pulse it slowly
   // 5000ms per breath period
-  uint8_t cBrightness = NSFastLED::quadwave8((millis()/5000)%256);
+  uint8_t cBrightness = quadwave8((millis()/5000)%256);
   uint8_t cHue = (millis()/30000) /256; // cycle color wheel every 30s
-  NSFastLED::CHSV hsv_led = NSFastLED::CHSV(cHue, 255, cBrightness);
-  NSFastLED::CRGB rgb_led;
-  NSFastLED::hsv2rgb_rainbow(hsv_led, rgb_led);
+  CHSV hsv_led = CHSV(cHue, 255, cBrightness);
+  CRGB rgb_led;
+  hsv2rgb_rainbow(hsv_led, rgb_led);
   for( int s = 0; s < NUM_STRIPS; s++) {
     for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
       leds[s*i] = rgb_led;
@@ -137,7 +137,7 @@ void pattern_flipped_over() {
 void pattern_from_palette() {
   for( int s = 0; s < NUM_STRIPS; s++) {
     for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-      leds[s*i] = NSFastLED::ColorFromPalette(currentPalette, gAnimIndex, MAX_BRIGHTNESS, currentBlending);
+      leds[s*i] = ColorFromPalette(currentPalette, gAnimIndex, MAX_BRIGHTNESS, currentBlending);
       gAnimIndex += 255/(NUM_LEDS_PER_STRIP*NUM_STRIPS);
     }
   }
@@ -174,10 +174,12 @@ void loop() {
     // handle identifying braking
     bool brakingDetected = accelIsBraking();
     if (!braking && brakingDetected) {
+      Serial.printlnf("brake engaged: %d", t_now);
       braking = true;
       t_brake = t_now;
     }
     if (braking && !brakingDetected) {
+      Serial.printlnf("brake released: %d", t_now);
       braking = false;
       t_brake_end = t_now;
     }
@@ -215,7 +217,7 @@ void loop() {
       case 5: currentPalette = LavaColors_p;     currentBlending = LINEARBLEND; break;
       default:
       gPalette = 0;
-      currentPalette = NSFastLED::RainbowColors_p; currentBlending = NSFastLED::LINEARBLEND; break;
+      currentPalette = RainbowColors_p; currentBlending = LINEARBLEND; break;
     }
     t_palette_start = t_now;
   }
@@ -235,6 +237,6 @@ void loop() {
     }
   }
 
-  NSFastLED::FastLED.show();
-  NSFastLED::FastLED.delay(1000 / UPDATES_PER_SECOND);
+  FastLED.show();
+  FastLED.delay(1000 / UPDATES_PER_SECOND);
 }
