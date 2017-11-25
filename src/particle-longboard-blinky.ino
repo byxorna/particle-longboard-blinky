@@ -26,8 +26,8 @@ SYSTEM_THREAD(ENABLED);
 #define MAX_SATURATION 255
 #define BOOTUP_ANIM_DURATION_MS 4000
 
-#define PATTERN_CHANGE_INTERVAL_S 15
-#define PALETTE_CHANGE_INTERVAL_S 15
+#define PATTERN_CHANGE_INTERVAL_MS 15000
+#define PALETTE_CHANGE_INTERVAL_MS 15000
 #define AUTO_CHANGE_PALETTE 0
 #define AUTO_CHANGE_PATTERNS 0
 
@@ -127,6 +127,23 @@ void pattern_flipped_over() {
   }
 }
 
+void pattern_cylon_eye() {
+  // cylon eye is 3 pixels wide, +/++ base index
+  // we map a 60bpm(1s) cycle into 0..num leds-1
+  uint8_t mappedIndex = beatsin8(60, 0, NUM_LEDS_PER_STRIP*NUM_STRIPS-1);
+  for(int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; ++i) {
+    if (mappedIndex == i) {
+      leds[i] = CRGB::Red;
+    } else if (addmod8(mappedIndex, 1, 255) == i) {
+      leds[i] = CRGB::Red;
+    } else if (addmod8(mappedIndex, 2, 255) == i) {
+      leds[i] = CRGB::Red;
+    } else {
+      leds[i] = CRGB::Black;
+    }
+  }
+}
+
 void pattern_bootup() {
   uint8_t baseHue = beatsin8(60, 0, 255);
   uint8_t iHue = 0;
@@ -197,15 +214,15 @@ void loop() {
 		}
   }
 
-  // increment pattern every PATTERN_CHANGE_INTERVAL_S
-  if (AUTO_CHANGE_PATTERNS && (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_S*1000)) {
+  // increment pattern every PATTERN_CHANGE_INTERVAL_MS
+  if (AUTO_CHANGE_PATTERNS && (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_MS)) {
     gPattern++;
     t_pattern_start = t_now;
     Serial.printlnf("pattern->%d", gPattern);
   }
 
-  // increment palette every PALETTE_CHANGE_INTERVAL_S
-  if (AUTO_CHANGE_PALETTE && (t_now > t_palette_start+PALETTE_CHANGE_INTERVAL_S*1000)) {
+  // increment palette every PALETTE_CHANGE_INTERVAL_MS
+  if (AUTO_CHANGE_PALETTE && (t_now > t_palette_start+PALETTE_CHANGE_INTERVAL_MS)) {
     switch(gPalette) {
       case 0: currentPalette = RainbowColors_p;  currentBlending = LINEARBLEND; break;
       case 1: currentPalette = PartyColors_p;    currentBlending = LINEARBLEND; break;
@@ -232,6 +249,7 @@ void loop() {
     switch(gPattern) {
       case 0: pattern_from_palette();
       break;
+      case 1: pattern_cylon_eye();
       default:
       gPattern = 0;
       break;
