@@ -171,6 +171,60 @@ void pattern_brake_light() {
   }
 }
 
+// NOTE: lifted and tweaked from https://learn.adafruit.com/rainbow-chakra-led-hoodie/the-code
+// This function draws color waves with an ever-changing,
+// widely-varying set of parameters, using a color palette.
+void pattern_palette_waves() {
+  uint8_t numleds = NUM_LEDS_PER_STRIP*NUM_STRIPS;
+  static uint16_t sPseudotime = 0;
+  static uint16_t sLastMillis = 0;
+  static uint16_t sHue16 = 0;
+
+  uint8_t sat8 = beatsin88( 87, 220, 250);
+  uint8_t brightdepth = beatsin88( 341, 96, 224);
+  uint16_t brightnessthetainc16 = beatsin88( 203, (25 * 256), (40 * 256));
+  uint8_t msmultiplier = beatsin88(147, 23, 60);
+
+  uint16_t hue16 = sHue16;//gHue * 256;
+  uint16_t hueinc16 = beatsin88(113, 300, 1500);
+
+  uint16_t ms = millis();
+  uint16_t deltams = ms - sLastMillis ;
+  sLastMillis  = ms;
+  sPseudotime += deltams * msmultiplier;
+  sHue16 += deltams * beatsin88( 400, 5,9);
+  uint16_t brightnesstheta16 = sPseudotime;
+
+  for( uint16_t i = 0 ; i < numleds; i++) {
+    hue16 += hueinc16;
+    uint8_t hue8 = hue16 / 256;
+    uint16_t h16_128 = hue16 >> 7;
+    if( h16_128 & 0x100) {
+      hue8 = 255 - (h16_128 >> 1);
+    } else {
+      hue8 = h16_128 >> 1;
+    }
+
+    brightnesstheta16  += brightnessthetainc16;
+    uint16_t b16 = sin16( brightnesstheta16  ) + 32768;
+
+    uint16_t bri16 = (uint32_t)((uint32_t)b16 * (uint32_t)b16) / 65536;
+    uint8_t bri8 = (uint32_t)(((uint32_t)bri16) * brightdepth) / 65536;
+    bri8 += (255 - brightdepth);
+
+    uint8_t index = hue8;
+    //index = triwave8( index);
+    index = scale8( index, 240);
+
+    CRGB newcolor = ColorFromPalette(currentPalette, index, bri8);
+
+    uint16_t pixelnumber = i;
+    pixelnumber = (numleds-1) - pixelnumber;
+
+    nblend(leds[pixelnumber], newcolor, 128);
+  }
+}
+
 // determines if the global state of accelerometer xyz values
 // indicate we are agressively braking
 bool accelIsBraking() {
@@ -225,14 +279,10 @@ void loop() {
   if (AUTO_CHANGE_PALETTE && (t_now > t_palette_start+PALETTE_CHANGE_INTERVAL_MS)) {
     switch(gPalette) {
       case 0: currentPalette = RainbowColors_p;  currentBlending = LINEARBLEND; break;
-      case 1: currentPalette = PartyColors_p;    currentBlending = LINEARBLEND; break;
-      case 2: currentPalette = CloudColors_p;    currentBlending = LINEARBLEND; break;
-      case 3: currentPalette = ForestColors_p;   currentBlending = LINEARBLEND; break;
-      case 4: currentPalette = OceanColors_p;    currentBlending = LINEARBLEND; break;
-      case 5: currentPalette = LavaColors_p;     currentBlending = LINEARBLEND; break;
-      default:
-      gPalette = 0;
-      currentPalette = RainbowColors_p; currentBlending = LINEARBLEND; break;
+      case 1: currentPalette = CloudColors_p;    currentBlending = LINEARBLEND; break;
+      case 2: currentPalette = ForestColors_p;   currentBlending = LINEARBLEND; break;
+      case 3: currentPalette = OceanColors_p;    currentBlending = LINEARBLEND; break;
+      default: gPalette = 0; currentPalette = LavaColors_p; currentBlending = LINEARBLEND; break;
     }
     t_palette_start = t_now;
   }
@@ -247,12 +297,10 @@ void loop() {
     pattern_brake_light();
   } else {
     switch(gPattern) {
-      case 0: pattern_from_palette();
-      break;
-      case 1: pattern_cylon_eye();
-      default:
-      gPattern = 0;
-      break;
+      case 0:   pattern_from_palette();   break;
+      case 1:   pattern_cylon_eye();      break;
+      case 2:   pattern_palette_waves();  break;
+      default:  gPattern = 0;            break;
     }
   }
 
