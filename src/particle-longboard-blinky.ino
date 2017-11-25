@@ -24,6 +24,7 @@ SYSTEM_THREAD(ENABLED);
 #define UPDATES_PER_SECOND 100
 #define MAX_BRIGHTNESS 255
 #define MAX_SATURATION 255
+#define BOOTUP_ANIM_DURATION_MS 4000
 
 #define PATTERN_CHANGE_INTERVAL_S 15
 #define PALETTE_CHANGE_INTERVAL_S 15
@@ -52,6 +53,7 @@ CFastLED* gLED; // global CFastLED object
 
 unsigned long lastPrintSample = 0;
 unsigned long t_now;                // time now in each loop iteration
+unsigned long t_boot;               // time at bootup
 unsigned long t_pattern_start = 0;  // time last pattern changed
 unsigned long t_palette_start = 0;  // time last palette changed
 
@@ -105,6 +107,8 @@ void setup() {
   // reset pattern
   gPattern = 0;
   gPalette = 0;
+
+  t_boot = millis();
 }
 
 // pattern to display when we are flipped upside down
@@ -120,6 +124,18 @@ void pattern_flipped_over() {
     for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
       leds[s*i] = rgb_led;
     }
+  }
+}
+
+void pattern_bootup() {
+  uint8_t baseHue = beatsin8(60, 0, 255);
+  uint8_t iHue = 0;
+  for(int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; ++i) {
+    iHue = addmod8(baseHue, 1, 255);
+    CHSV hsv_led = CHSV(iHue, 255, 255);
+    CRGB rgb_led;
+    hsv2rgb_rainbow(hsv_led, rgb_led);
+    leds[i] = rgb_led;
   }
 }
 
@@ -204,10 +220,13 @@ void loop() {
     t_palette_start = t_now;
   }
 
-  if (accel_lastPos == ACCEL_POSITION_UPSIDEDOWN) {
+  if (t_boot + BOOTUP_ANIM_DURATION_MS < t_now) {
+    // display a bootup pattern for a bit
+    pattern_bootup();
+  } else if (accel_lastPos == ACCEL_POSITION_UPSIDEDOWN) {
     // pause pattern
     pattern_flipped_over();
-  } else if ( braking || !braking && (t_brake_end+BRAKE_HOLD_MS < t_now)) {
+  } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS < t_now))) {
     pattern_brake_light();
   } else {
     switch(gPattern) {
