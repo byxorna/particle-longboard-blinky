@@ -148,16 +148,22 @@ void pattern_flipped_over() {
 }
 
 void pattern_cylon_eye() {
-  // cylon eye is 3 pixels wide, +/++ base index
+  // cylon eye is 4 pixels wide, +/++ base index
   // we map a 60bpm(1s) cycle into 0..num leds-1
+  uint8_t h = beatsin8(15, 0, 255);
+  CHSV hsv_led = CHSV(h, 255, 255);
+  CRGB rgb_led;
+  hsv2rgb_rainbow(hsv_led, rgb_led);
   uint8_t mappedIndex = beatsin8(60, 0, NUM_LEDS_PER_STRIP*NUM_STRIPS-1);
   for(int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; ++i) {
     if (mappedIndex == i) {
-      leds[i] = CRGB::Red;
+      leds[i] = rgb_led;
     } else if (addmod8(mappedIndex, 1, 255) == i) {
-      leds[i] = CRGB::Red;
+      leds[i] = rgb_led;
     } else if (addmod8(mappedIndex, 2, 255) == i) {
-      leds[i] = CRGB::Red;
+      leds[i] = rgb_led;
+    } else if (addmod8(mappedIndex, 3, 255) == i) {
+      leds[i] = rgb_led;
     } else {
       leds[i] = CRGB::Black;
     }
