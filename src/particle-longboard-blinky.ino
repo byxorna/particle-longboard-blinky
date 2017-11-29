@@ -14,7 +14,7 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
 #define CLOCK_PIN D4
-#define NUM_LEDS_PER_STRIP 15
+#define NUM_LEDS_PER_STRIP 30
 #define NUM_STRIPS 2
 
 #define LED_TYPE NEOPIXEL
@@ -24,7 +24,7 @@ SYSTEM_THREAD(ENABLED);
 #define UPDATES_PER_SECOND 100
 #define MAX_BRIGHTNESS 255
 #define MAX_SATURATION 255
-#define BOOTUP_ANIM_DURATION_MS 4000
+#define BOOTUP_ANIM_DURATION_MS 2000
 
 #define PATTERN_CHANGE_INTERVAL_MS 15000
 #define PALETTE_CHANGE_INTERVAL_MS 15000
@@ -51,7 +51,7 @@ LIS3DHI2C* accel = new LIS3DHI2C(0, WKP);
 volatile bool accel_positionInterrupt = false;
 uint8_t accel_lastPos = 0;
 
-uint8_t gBrightness = 10; // global brightness
+uint8_t gBrightness = 40; // global brightness
 uint8_t gPattern = 0; // global pattern
 uint8_t gPalette = 0; // global palette
 uint8_t gAnimIndex = 0; // animation index for ColorFromPalette
@@ -65,15 +65,23 @@ unsigned long t_palette_start = 0;  // time last palette changed
 
 /* BRAKING STATE VARS */
 bool braking = false;
-unsigned long t_brake;              // time braking started
-unsigned long t_brake_end;          // time braking ended
+unsigned long t_brake = 0;          // time braking started
+unsigned long t_brake_end = 0;      // time braking ended
 // when we activate the brakes, hold the brake light for X ms
 // after we decide we arent braking anymore
 #define BRAKE_HOLD_MS 3000
 
 // for effects that are palette based
 CRGBPalette16 currentPalette; // current color palette
-TBlendType currentBlending;
+CRGBPalette16 palettes[5] = {
+  RainbowColors_p,
+  CloudColors_p,
+  ForestColors_p,
+  OceanColors_p,
+  LavaColors_p,
+};
+
+TBlendType currentBlending = LINEARBLEND;
 CRGB leds[NUM_STRIPS*NUM_LEDS_PER_STRIP]; //[NUM_STRIPS][NUM_LEDS_PER_STRIP];
 
 void accel_positionInterruptHandler() {
@@ -87,9 +95,12 @@ void setup() {
 
   Serial.begin(9600);
   Serial.println("resetting");
+  //RGB.control(true);
+  //RGB.color(0,0,255);
 
   // chill for a sec
   delay( 1000 );
+  //RGB.color(255,0,0);
 
   /*
   // Initialize sensors
@@ -103,8 +114,7 @@ void setup() {
   accel->getSample(accel_now);
   */
 
-  currentPalette = RainbowColors_p;
-  currentBlending = LINEARBLEND;
+  currentPalette = palettes[0];
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
   gLED = new CFastLED();
@@ -118,6 +128,7 @@ void setup() {
 
   t_boot = millis();
   Serial.println("booted up");
+  //RGB.color(0,255,0);
 }
 
 // pattern to display when we are flipped upside down
@@ -154,7 +165,7 @@ void pattern_cylon_eye() {
 }
 
 void pattern_bootup() {
-  uint8_t baseHue = beatsin8(60, 0, 255);
+  uint8_t baseHue = beatsin8(30, 0, 255);
   uint8_t iHue = 0;
   for(int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; ++i) {
     iHue = addmod8(baseHue, 1, 255);
@@ -166,12 +177,11 @@ void pattern_bootup() {
 }
 
 void pattern_from_palette() {
-  for( int s = 0; s < NUM_STRIPS; s++) {
-    for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-      leds[s*i] = ColorFromPalette(currentPalette, gAnimIndex, MAX_BRIGHTNESS, currentBlending);
-      gAnimIndex += 255/(NUM_LEDS_PER_STRIP*NUM_STRIPS);
-    }
+  uint8_t b = beatsin8(4, 0, 255);
+  for( int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; i++) {
+    leds[i] = ColorFromPalette(currentPalette, gAnimIndex + i + b, MAX_BRIGHTNESS, currentBlending);
   }
+  gAnimIndex = addmod8(gAnimIndex, 1, 255);
 }
 
 void pattern_brake_light() {
@@ -189,7 +199,7 @@ void pattern_palette_waves() {
   static uint16_t sLastMillis = 0;
   static uint16_t sHue16 = 0;
 
-  uint8_t sat8 = beatsin88( 87, 220, 250);
+  //uint8_t sat8 = beatsin88( 87, 220, 250);
   uint8_t brightdepth = beatsin88( 341, 96, 224);
   uint16_t brightnessthetainc16 = beatsin88( 203, (25 * 256), (40 * 256));
   uint8_t msmultiplier = beatsin88(147, 23, 60);
@@ -222,7 +232,6 @@ void pattern_palette_waves() {
     bri8 += (255 - brightdepth);
 
     uint8_t index = hue8;
-    //index = triwave8( index);
     index = scale8( index, 240);
 
     CRGB newcolor = ColorFromPalette(currentPalette, index, bri8);
@@ -245,7 +254,6 @@ bool accelIsBraking() {
 void loop() {
   t_now = millis();
   if (t_now - lastPrintSample >= 100) {
-    Serial.println(t_now);
     lastPrintSample = t_now;
   }
   /* disable accel for now
@@ -292,23 +300,30 @@ void loop() {
 
   // increment palette every PALETTE_CHANGE_INTERVAL_MS
   if (AUTO_CHANGE_PALETTE && (t_now > t_palette_start+PALETTE_CHANGE_INTERVAL_MS)) {
-    switch(gPalette) {
-      case 0: currentPalette = RainbowColors_p;  currentBlending = LINEARBLEND; break;
-      case 1: currentPalette = CloudColors_p;    currentBlending = LINEARBLEND; break;
-      case 2: currentPalette = ForestColors_p;   currentBlending = LINEARBLEND; break;
-      case 3: currentPalette = OceanColors_p;    currentBlending = LINEARBLEND; break;
-      default: gPalette = 0; currentPalette = LavaColors_p; currentBlending = LINEARBLEND; break;
+    gPalette++;
+    if (gPalette >= (sizeof(palettes)/sizeof(*palettes))) {
+      gPalette = 0;
     }
+    currentPalette = palettes[gPalette];
+    switch(gPalette) {
+      case 0: currentPalette = RainbowColors_p;  break;
+      case 1: currentPalette = CloudColors_p;    break;
+      case 2: currentPalette = ForestColors_p;   break;
+      case 3: currentPalette = OceanColors_p;    break;
+      case 4: currentPalette = LavaColors_p;     break;
+      default: gPalette = 0; break;
+    }
+    Serial.printlnf("palette->%d", gPalette);
     t_palette_start = t_now;
   }
 
-  if (t_boot + BOOTUP_ANIM_DURATION_MS < t_now) {
+  if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
     // display a bootup pattern for a bit
     pattern_bootup();
   } else if (accel_lastPos == ACCEL_POSITION_UPSIDEDOWN) {
     // pause pattern
     pattern_flipped_over();
-  } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS < t_now))) {
+  } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS > t_now))) {
     pattern_brake_light();
   } else {
     switch(gPattern) {
