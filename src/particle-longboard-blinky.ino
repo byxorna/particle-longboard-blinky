@@ -17,6 +17,7 @@
 #include "Particle.h"
 #include "FastLED.h"
 #include "LIS3DH.h"
+#include "RunningAverage.h"
 
 FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
@@ -47,6 +48,7 @@ SYSTEM_THREAD(ENABLED);
 #define ACCEL_POSITION_B 2
 #define ACCEL_POSITION_C 1
 #define ACCEL_POLL_INTERVAL_MS 100
+#define BRAKING_SAMPLE_WINDOW 5
 
 void accel_positionInterruptHandler();
 LIS3DHSample accel_now; // accelerometer value last sampled
@@ -62,6 +64,7 @@ LIS3DHSample accel_prev;
 LIS3DHI2C accel(Wire, 0, WKP);
 volatile bool accel_positionInterrupt = false;
 uint8_t accel_lastPos = 0;
+RunningAverage xAccelAvg(BRAKING_SAMPLE_WINDOW);
 
 uint8_t gBrightness = 40; // global brightness
 uint8_t gPattern = 0; // global pattern
@@ -107,6 +110,7 @@ void setup() {
 
   Serial.begin(9600);
   Serial.println("resetting");
+  xAccelAvg.clear();
 
   // chill for a sec
   delay( 4000 );
@@ -269,9 +273,9 @@ void pattern_palette_waves() {
 // indicate we are agressively braking
 bool accelIsBraking() {
   //TODO(gabe) figure out thresholds and directions
-  int dx = (accel_prev.x - accel_now.x)/ACCEL_POLL_INTERVAL_MS;
-  Serial.printlnf("accel x=%d",dx);
-  return dx < -50;
+  int avg = xAccelAvg.getAverage();
+  Serial.printlnf("accel x=%d", avg);
+  return avg < -15;
 }
 
 
@@ -284,6 +288,8 @@ void loop() {
     accel_prev = accel_now;
     if (accel.getSample(accel_now)) {
       //Serial.printlnf("acc: %d,%d,%d", accel_now.x, accel_now.y, accel_now.z);
+      int dx = (accel_prev.x - accel_now.x)/ACCEL_POLL_INTERVAL_MS;
+      xAccelAvg.addValue(dx);
     }
     // handle identifying braking
     bool brakingDetected = accelIsBraking();
