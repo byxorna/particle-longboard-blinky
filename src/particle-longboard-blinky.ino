@@ -5,6 +5,15 @@
 * Date: idklol
 */
 
+/*
+  Photon pins:
+  WKP -> INT on LIS3DH
+  GND->gnd
+  VIN->+5v
+  D0->SDA LIS3DH
+  D1->SCL LIS3DH
+*/
+
 #include "Particle.h"
 #include "FastLED.h"
 #include "LIS3DH.h"
@@ -14,7 +23,7 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
 #define CLOCK_PIN D4
-#define NUM_LEDS_PER_STRIP 30
+#define NUM_LEDS_PER_STRIP 24
 #define NUM_STRIPS 2
 
 #define LED_TYPE NEOPIXEL
@@ -37,9 +46,11 @@ SYSTEM_THREAD(ENABLED);
 #define ACCEL_POSITION_A 3
 #define ACCEL_POSITION_B 2
 #define ACCEL_POSITION_C 1
+#define ACCEL_POLL_INTERVAL_MS 100
 
 void accel_positionInterruptHandler();
 LIS3DHSample accel_now; // accelerometer value last sampled
+LIS3DHSample accel_prev;
 // Connect the Adafruit LIS3DH breakout
 // https://www.adafruit.com/products/2809
 // VIN: 3V3
@@ -107,7 +118,7 @@ void setup() {
 
   // Initialize sensors
   LIS3DHConfig config;
-  config.setAccelMode(LIS3DH::RATE_25_HZ);
+  config.setAccelMode(LIS3DH::RATE_100_HZ);
   attachInterrupt(WKP, accel_positionInterruptHandler, RISING);
   config.setPositionInterrupt(16);
   bool setupSuccess = accel.setup(config);
@@ -121,6 +132,8 @@ void setup() {
   gLED = new CFastLED();
   gLED->addLeds<LED_TYPE, D6>(leds, NUM_LEDS_PER_STRIP*NUM_STRIPS);
   gLED->setBrightness(gBrightness);
+  pattern_clear();
+  gLED->show();
 
   // reset pattern
   gPattern = 0;
@@ -180,6 +193,11 @@ void pattern_bootup() {
   }
 }
 
+void pattern_clear() {
+  for( int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; i++) {
+    leds[i] = CRGB::Black;
+  }
+}
 void pattern_from_palette() {
   uint8_t b = beatsin8(4, 0, 255);
   for( int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; i++) {
@@ -251,19 +269,21 @@ void pattern_palette_waves() {
 // indicate we are agressively braking
 bool accelIsBraking() {
   //TODO(gabe) figure out thresholds and directions
-  return false;
+  int dx = (accel_prev.x - accel_now.x)/ACCEL_POLL_INTERVAL_MS;
+  Serial.printlnf("accel x=%d",dx);
+  return dx < -50;
 }
 
 
 void loop() {
   t_now = millis();
-  if (t_now - lastPrintSample >= 100) {
+
+  // get a sample from accelerometer
+  if (t_now - lastPrintSample >= ACCEL_POLL_INTERVAL_MS) {
     lastPrintSample = t_now;
-  }
-  if (t_now - lastPrintSample >= 100) {
-    lastPrintSample = t_now;
+    accel_prev = accel_now;
     if (accel.getSample(accel_now)) {
-      Serial.printlnf("acc: %d,%d,%d", accel_now.x, accel_now.y, accel_now.z);
+      //Serial.printlnf("acc: %d,%d,%d", accel_now.x, accel_now.y, accel_now.z);
     }
     // handle identifying braking
     bool brakingDetected = accelIsBraking();
