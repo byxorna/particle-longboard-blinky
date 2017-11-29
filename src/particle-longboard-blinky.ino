@@ -47,7 +47,8 @@ LIS3DHSample accel_now; // accelerometer value last sampled
 // SCL: Connect to D1 (I2C SCL)
 // SDA: Connect to D0 (I2C SDA)
 // INT: WKP
-LIS3DHI2C* accel = new LIS3DHI2C(0, WKP);
+//LIS3DHI2C* accel = new LIS3DHI2C(0, WKP);
+LIS3DHI2C accel(Wire, 0, WKP);
 volatile bool accel_positionInterrupt = false;
 uint8_t accel_lastPos = 0;
 
@@ -95,31 +96,30 @@ void setup() {
 
   Serial.begin(9600);
   Serial.println("resetting");
-  //RGB.control(true);
-  //RGB.color(0,0,255);
 
   // chill for a sec
-  delay( 1000 );
-  //RGB.color(255,0,0);
+  delay( 4000 );
+  Serial.println("setting up accelerometer");
 
-  /*
+  // initialize i2c wire; photon has only 1 wire bus WKP (D0,D1)
+  Wire.setSpeed(CLOCK_SPEED_100KHZ);
+  Wire.begin();
+
   // Initialize sensors
   LIS3DHConfig config;
   config.setAccelMode(LIS3DH::RATE_25_HZ);
   attachInterrupt(WKP, accel_positionInterruptHandler, RISING);
   config.setPositionInterrupt(16);
-  bool setupSuccess = accel->setup(config);
+  bool setupSuccess = accel.setup(config);
   Serial.printlnf("accelerometer setup: %d", setupSuccess);
   // lets Initialize the accelerometer struct
-  accel->getSample(accel_now);
-  */
+  accel.getSample(accel_now);
 
   currentPalette = palettes[0];
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
   gLED = new CFastLED();
   gLED->addLeds<LED_TYPE, D6>(leds, NUM_LEDS_PER_STRIP*NUM_STRIPS);
-  //gLED->addLeds<LED_TYPE, D5>(leds + NUM_LEDS_PER_STRIP, NUM_LEDS_PER_STRIP);
   gLED->setBrightness(gBrightness);
 
   // reset pattern
@@ -140,10 +140,8 @@ void pattern_flipped_over() {
   CHSV hsv_led = CHSV(cHue, 255, cBrightness);
   CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
-  for( int s = 0; s < NUM_STRIPS; s++) {
-    for( int i = 0; i < NUM_LEDS_PER_STRIP; i++) {
-      leds[s*i] = rgb_led;
-    }
+  for( int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; i++) {
+    leds[i] = rgb_led;
   }
 }
 
@@ -262,10 +260,9 @@ void loop() {
   if (t_now - lastPrintSample >= 100) {
     lastPrintSample = t_now;
   }
-  /* disable accel for now
   if (t_now - lastPrintSample >= 100) {
     lastPrintSample = t_now;
-    if (accel->getSample(accel_now)) {
+    if (accel.getSample(accel_now)) {
       Serial.printlnf("acc: %d,%d,%d", accel_now.x, accel_now.y, accel_now.z);
     }
     // handle identifying braking
@@ -289,13 +286,12 @@ void loop() {
 		// 5: normal position, with the accerometer facing up
 		// 4: upside down
 		// 1 - 3: other orientations
-		uint8_t pos = accel->readPositionInterrupt();
+		uint8_t pos = accel.readPositionInterrupt();
 		if (pos != 0 && pos != accel_lastPos) {
 			Serial.printlnf("acc pos=%d", pos);
 			accel_lastPos = pos;
 		}
   }
-  */
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS
   if (AUTO_CHANGE_PATTERNS && (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_MS)) {
@@ -326,8 +322,8 @@ void loop() {
   if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
     // display a bootup pattern for a bit
     pattern_bootup();
-  } else if (accel_lastPos == ACCEL_POSITION_UPSIDEDOWN) {
-    // pause pattern
+  } else if (accel_lastPos == ACCEL_POSITION_NORMAL) {
+    // pause pattern, cause we are actually upside down!
     pattern_flipped_over();
   } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS > t_now))) {
     pattern_brake_light();
