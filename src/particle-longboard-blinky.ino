@@ -164,7 +164,7 @@ void pattern_slow_pulse() {
 void pattern_cylon_eye() {
   // cylon eye is 4 pixels wide, +/++ base index
   // we map a 60bpm(1s) cycle into 0..num leds-1
-  uint8_t h = beatsin8(15, 0, 255);
+  uint8_t h = beatsin8(12, 0, 255);
   CHSV hsv_led = CHSV(h, 255, 255);
   CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
