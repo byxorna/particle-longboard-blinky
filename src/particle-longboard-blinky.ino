@@ -368,8 +368,6 @@ void loop() {
   } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS > t_now))) {
     pattern_brake_light();
   } else {
-      pattern_slow_pulse();
-      /*
     switch(gPattern) {
       case 0:   pattern_from_palette();   break;
       case 1:   pattern_slow_pulse();     break;
@@ -377,7 +375,6 @@ void loop() {
       case 3:   pattern_rainbow_waves();  break;
       default:  gPattern = 0;             break;
     }
-    */
   }
 
   gLED->show();
