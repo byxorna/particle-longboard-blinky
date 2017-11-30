@@ -86,9 +86,21 @@ unsigned long t_brake_end = 0;      // time braking ended
 // after we decide we arent braking anymore
 #define BRAKE_HOLD_MS 3000
 
+/* custom color palettes */
+// orange 255,102,0 FF6600
+// pink 255,0,255 #ff00ff
+// pornj 255,51,51 #ff3333
+DEFINE_GRADIENT_PALETTE( Disorient_gp ) {
+      0,   0,   0,   0,    // black
+     75, 255,  26, 153,    // pink
+    147, 255,  51,  51,    // pornj
+    208, 255, 111,  15,    // orange
+    255, 255, 255, 255, }; // white
+
 // for effects that are palette based
 CRGBPalette16 currentPalette; // current color palette
-CRGBPalette16 palettes[5] = {
+CRGBPalette16 palettes[6] = {
+  Disorient_gp,
   RainbowColors_p,
   CloudColors_p,
   ForestColors_p,
@@ -150,9 +162,9 @@ void setup() {
 
 void pattern_slow_pulse() {
   // pick a color, and pulse it 
-  uint8_t bpm = beatsin8(8, 8, 120);
-  uint8_t cBrightness = beatsin8(bpm, 0, 255);
-  uint8_t cHue = beatsin8(60/30, 0, 255); // cycle colors every 30s
+  //uint8_t bpm = beatsin8(4, 8, 16);
+  uint8_t cBrightness = beatsin8(50, 0, 255);
+  uint8_t cHue = beatsin8(6, 0, 255); // cycle colors every 30s
   CHSV hsv_led = CHSV(cHue, 255, cBrightness);
   CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
@@ -164,7 +176,7 @@ void pattern_slow_pulse() {
 void pattern_cylon_eye() {
   // cylon eye is 4 pixels wide, +/++ base index
   // we map a 60bpm(1s) cycle into 0..num leds-1
-  uint8_t h = beatsin8(12, 0, 255);
+  uint8_t h = beatsin8(8, 0, 255);
   CHSV hsv_led = CHSV(h, 255, 255);
   CRGB rgb_led;
   hsv2rgb_rainbow(hsv_led, rgb_led);
@@ -198,12 +210,9 @@ void pattern_bootup() {
 
 // cycle a rainbow, varying how quickly it rolls around the board
 void pattern_rainbow_waves() {
-  uint8_t baseBPM = beatsin8(12, 8, 30);
-  uint8_t baseHue = beatsin8(baseBPM, 0, 255);
-  uint8_t iHue = 0;
   for(int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; ++i) {
-    iHue = addmod8(baseHue, 1, 255);
-    CHSV hsv_led = CHSV(iHue, 255, 255);
+    uint8_t h = (t_now/8+i)%256;
+    CHSV hsv_led = CHSV(h, 255, 255);
     CRGB rgb_led;
     hsv2rgb_rainbow(hsv_led, rgb_led);
     leds[i] = rgb_led;
@@ -346,14 +355,6 @@ void loop() {
       gPalette = 0;
     }
     currentPalette = palettes[gPalette];
-    switch(gPalette) {
-      case 0: currentPalette = RainbowColors_p;  break;
-      case 1: currentPalette = CloudColors_p;    break;
-      case 2: currentPalette = ForestColors_p;   break;
-      case 3: currentPalette = OceanColors_p;    break;
-      case 4: currentPalette = LavaColors_p;     break;
-      default: gPalette = 0; break;
-    }
     Serial.printlnf("palette->%d", gPalette);
     t_palette_start = t_now;
   }
@@ -367,6 +368,8 @@ void loop() {
   } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS > t_now))) {
     pattern_brake_light();
   } else {
+      pattern_slow_pulse();
+      /*
     switch(gPattern) {
       case 0:   pattern_from_palette();   break;
       case 1:   pattern_slow_pulse();     break;
@@ -374,6 +377,7 @@ void loop() {
       case 3:   pattern_rainbow_waves();  break;
       default:  gPattern = 0;             break;
     }
+    */
   }
 
   gLED->show();
