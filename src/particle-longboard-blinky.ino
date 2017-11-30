@@ -197,6 +197,20 @@ void pattern_bootup() {
   }
 }
 
+// cycle a rainbow, varying how quickly it rolls around the board
+void pattern_rainbow_waves() {
+  uint8_t baseBPM = beatsin8(12, 8, 30);
+  uint8_t baseHue = beatsin8(baseBPM, 0, 255);
+  uint8_t iHue = 0;
+  for(int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; ++i) {
+    iHue = addmod8(baseHue, 1, 255);
+    CHSV hsv_led = CHSV(iHue, 255, 255);
+    CRGB rgb_led;
+    hsv2rgb_rainbow(hsv_led, rgb_led);
+    leds[i] = rgb_led;
+  }
+}
+
 void pattern_clear() {
   for( int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; i++) {
     leds[i] = CRGB::Black;
@@ -358,6 +372,7 @@ void loop() {
       case 0:   pattern_from_palette();   break;
       case 1:   pattern_cylon_eye();      break;
       case 2:   pattern_palette_waves();  break;
+      case 3:   pattern_rainbow_waves();  break;
       default:  gPattern = 0;            break;
     }
   }

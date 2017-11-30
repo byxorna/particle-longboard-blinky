@@ -64,3 +64,8 @@ To enter DFU Mode:
 - Wait for the LED to start flashing yellow
 - Release the MODE button
 - The Core now is in the DFU mode.
+
+# TODO
+- [ ] make pattern when flipped cylon eye
+- [ ] make rainbow pattern for normal operation
+- [ ] make disorient palette
