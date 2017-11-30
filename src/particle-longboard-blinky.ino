@@ -148,11 +148,10 @@ void setup() {
   //RGB.color(0,255,0);
 }
 
-// pattern to display when we are flipped upside down
-void pattern_flipped_over() {
-  // pick a color, and just pulse it slowly
-  // 5000ms per breath period
-  uint8_t cBrightness = beatsin8(12, 0, 255);
+void pattern_slow_pulse() {
+  // pick a color, and pulse it 
+  uint8_t bpm = beatsin8(8, 8, 120);
+  uint8_t cBrightness = beatsin8(bpm, 0, 255);
   uint8_t cHue = beatsin8(60/30, 0, 255); // cycle colors every 30s
   CHSV hsv_led = CHSV(cHue, 255, cBrightness);
   CRGB rgb_led;
@@ -364,16 +363,16 @@ void loop() {
     pattern_bootup();
   } else if (accel_lastPos == ACCEL_POSITION_NORMAL) {
     // pause pattern, cause we are actually upside down!
-    pattern_flipped_over();
+    pattern_cylon_eye();
   } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS > t_now))) {
     pattern_brake_light();
   } else {
     switch(gPattern) {
       case 0:   pattern_from_palette();   break;
-      case 1:   pattern_cylon_eye();      break;
+      case 1:   pattern_slow_pulse();     break;
       case 2:   pattern_palette_waves();  break;
       case 3:   pattern_rainbow_waves();  break;
-      default:  gPattern = 0;            break;
+      default:  gPattern = 0;             break;
     }
   }
 
