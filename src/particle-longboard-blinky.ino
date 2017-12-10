@@ -14,6 +14,8 @@
   D1->SCL LIS3DH
 */
 
+typedef void (*FP)();
+
 #include "Particle.h"
 #include "FastLED.h"
 #include "LIS3DH.h"
@@ -69,7 +71,8 @@ uint8_t accel_lastPos = 0;
 RunningAverage xAccelAvg(BRAKING_SAMPLE_WINDOW);
 
 uint8_t gBrightness; // global brightness, read from potentiometer
-uint8_t gPattern = 0; // global pattern
+uint8_t gPattern; // global pattern
+
 uint8_t gPalette = 0; // global palette
 uint8_t gAnimIndex = 0; // animation index for ColorFromPalette
 CFastLED* gLED; // global CFastLED object
@@ -163,8 +166,8 @@ void setup() {
   pattern_clear();
   gLED->show();
 
-  // reset pattern
-  gPattern = 0;
+  // reset pattern from potentiometer
+  gPattern = readModeFromPot();
   gPalette = 0;
 
   t_boot = millis();
@@ -312,6 +315,22 @@ bool accelIsBraking() {
   return avg < -15;
 }
 
+/** update this with patterns you want to be cycled through **/
+#define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
+const FP patternBank[] = {
+  &pattern_from_palette,
+  &pattern_slow_pulse,
+  &pattern_palette_waves,
+  &pattern_rainbow_waves
+};
+
+// read from mode potentiometer, returning which program to run
+uint8_t readModeFromPot() {
+  int rawMode = analogRead(MODE_POT_PIN); // 0-1023
+  return map(rawMode, 0, 1023, 0, NUM_PATTERNS-1);
+}
+
+
 
 void loop() {
   t_now = millis();
@@ -384,12 +403,10 @@ void loop() {
   } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS > t_now))) {
     pattern_brake_light();
   } else {
-    switch(gPattern) {
-      case 0:   pattern_from_palette();   break;
-      case 1:   pattern_slow_pulse();     break;
-      case 2:   pattern_palette_waves();  break;
-      case 3:   pattern_rainbow_waves();  break;
-      default:  gPattern = 0;             break;
+    if (gPattern < NUM_PATTERNS) {
+      patternBank[gPattern]();
+    } else {
+      gPattern = 0;
     }
   }
 
