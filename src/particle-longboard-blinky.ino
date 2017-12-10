@@ -25,9 +25,10 @@ FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
-#define CLOCK_PIN D4
 #define BRIGHTNESS_POT_PIN A1
 #define MODE_POT_PIN A2
+#define AUTO_PATTERN_PIN A3
+#define CLOCK_PIN D4
 #define NUM_LEDS_PER_STRIP 24
 #define NUM_STRIPS 2
 
@@ -43,7 +44,6 @@ SYSTEM_THREAD(ENABLED);
 #define PATTERN_CHANGE_INTERVAL_MS 15000
 #define PALETTE_CHANGE_INTERVAL_MS 15000
 #define AUTO_CHANGE_PALETTE 1
-#define AUTO_CHANGE_PATTERNS 1
 
 // accelerometer stuff
 #define ACCEL_POSITION_NORMAL 5
@@ -72,6 +72,7 @@ RunningAverage xAccelAvg(BRAKING_SAMPLE_WINDOW);
 
 uint8_t gBrightness; // global brightness, read from potentiometer
 uint8_t gPattern; // global pattern
+bool autoPatternChange;
 
 uint8_t gPalette = 0; // global palette
 uint8_t gAnimIndex = 0; // animation index for ColorFromPalette
@@ -128,6 +129,11 @@ uint8_t readBrightnessFromPot() {
   return map(rawBrightness, 0, 1023, 10, 255);
 }
 
+bool readAutoPatternChange() {
+  int raw = analogRead(AUTO_PATTERN_PIN); // 0-1023
+  return (bool)constrain(map(raw, 0, 1023, 0, 3), 0, 1);
+}
+
 // setup() runs once, when the device is first turned on.
 void setup() {
 
@@ -154,6 +160,7 @@ void setup() {
   accel.getSample(accel_now);
 
   currentPalette = palettes[0];
+  autoPatternChange = readAutoPatternChange();
 
   // read initial values from potentiometers for brightness
   gBrightness = readBrightnessFromPot();
@@ -338,6 +345,7 @@ void loop() {
   // update brightness values
   // TODO: each analog read is 100us, should be conditionalize this?
   gBrightness = readBrightnessFromPot();
+  autoPatternChange = readAutoPatternChange();
 
   // get a sample from accelerometer
   if (t_now - lastPrintSample >= ACCEL_POLL_INTERVAL_MS) {
@@ -377,7 +385,7 @@ void loop() {
   }
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS
-  if (AUTO_CHANGE_PATTERNS && (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_MS)) {
+  if (autoPatternChange && (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_MS)) {
     gPattern++;
     t_pattern_start = t_now;
     Serial.printlnf("pattern->%d", gPattern);

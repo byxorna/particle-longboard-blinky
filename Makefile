@@ -1,3 +1,4 @@
+.DEFAULT_GOAL := build
 FIRMWARE = firmware.bin
 deps:
 	@echo Installing deps
