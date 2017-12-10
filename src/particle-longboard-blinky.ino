@@ -24,6 +24,8 @@ SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
 #define CLOCK_PIN D4
+#define BRIGHTNESS_POT_PIN A1
+#define MODE_POT_PIN A2
 #define NUM_LEDS_PER_STRIP 24
 #define NUM_STRIPS 2
 
@@ -66,7 +68,7 @@ volatile bool accel_positionInterrupt = false;
 uint8_t accel_lastPos = 0;
 RunningAverage xAccelAvg(BRAKING_SAMPLE_WINDOW);
 
-uint8_t gBrightness = 40; // global brightness
+uint8_t gBrightness; // global brightness, read from potentiometer
 uint8_t gPattern = 0; // global pattern
 uint8_t gPalette = 0; // global palette
 uint8_t gAnimIndex = 0; // animation index for ColorFromPalette
@@ -116,6 +118,12 @@ void accel_positionInterruptHandler() {
 	accel_positionInterrupt = true;
 }
 
+// reads intended brightness level from potentiometer
+// and maps it into an acceptable brightness value
+uint8_t readBrightnessFromPot() {
+  int rawBrightness = analogRead(BRIGHTNESS_POT_PIN); // 0-1023
+  return map(rawBrightness, 0, 1023, 10, 255);
+}
 
 // setup() runs once, when the device is first turned on.
 void setup() {
@@ -143,6 +151,10 @@ void setup() {
   accel.getSample(accel_now);
 
   currentPalette = palettes[0];
+
+  // read initial values from potentiometers for brightness
+  gBrightness = readBrightnessFromPot();
+  Serial.printlnf("init brightness: %d", gBrightness);
 
   // led controller, data pin, clock pin, RGB type (RGB is already defined in particle)
   gLED = new CFastLED();
@@ -303,6 +315,10 @@ bool accelIsBraking() {
 
 void loop() {
   t_now = millis();
+
+  // update brightness values
+  // TODO: each analog read is 100us, should be conditionalize this?
+  gBrightness = readBrightnessFromPot();
 
   // get a sample from accelerometer
   if (t_now - lastPrintSample >= ACCEL_POLL_INTERVAL_MS) {
