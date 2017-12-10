@@ -11,7 +11,7 @@ $ yarn install
 ## Compile
 
 ```
-$ particle compile photon
+$ make build
 attempting to compile firmware
 downloading binary from: /v1/binaries/59e420266d43bc4ff5174c76
 saving to: photon_firmware_1508122650655.bin
@@ -26,7 +26,7 @@ Saved firmware to: /Users/gabe/code/particle-longboard-blinky/photon_firmware_15
 ## Flash
 
 ```
-$ particle flash --usb $(ls -t photon_firmware*bin|head -n1)
+$ make flash
 Found DFU device 2b04:d006
 spawning dfu-util -d 2b04:d006 -a 0 -i 0 -s 0x080A0000:leave -D photon_firmware_1508122560924.bin
 dfu-util 0.9
