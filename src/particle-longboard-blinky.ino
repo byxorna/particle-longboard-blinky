@@ -25,6 +25,11 @@ FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
+// analogRead claims 1023 is upper bound (10bit)
+// but on particle im seeing 4095 (12 bit register)
+#define ANALOG_UPPER_BOUND 4095
+#define ANALOG_LOWER_BOUND 300
+
 #define BRIGHTNESS_POT_PIN A1
 #define MODE_POT_PIN A2
 #define AUTO_PATTERN_PIN A3
@@ -125,13 +130,21 @@ void accel_positionInterruptHandler() {
 // reads intended brightness level from potentiometer
 // and maps it into an acceptable brightness value
 uint8_t readBrightnessFromPot() {
-  int rawBrightness = analogRead(BRIGHTNESS_POT_PIN); // 0-1023
-  return map(rawBrightness, 0, 1023, 10, 255);
+  int rawBrightness = analogRead(BRIGHTNESS_POT_PIN); // 0-ANALOG_UPPER_BOUND
+  if (rawBrightness < ANALOG_LOWER_BOUND) {
+    rawBrightness = 0;
+  }
+  //Serial.printf("brightness raw: %d\n", rawBrightness);
+  return map(rawBrightness, 0, ANALOG_UPPER_BOUND, 10, 255);
 }
 
 bool readAutoPatternChange() {
-  int raw = analogRead(AUTO_PATTERN_PIN); // 0-1023
-  return (bool)constrain(map(raw, 0, 1023, 0, 3), 0, 1);
+  int raw = analogRead(AUTO_PATTERN_PIN); // 0-ANALOG_UPPER_BOUND
+  if (raw < ANALOG_LOWER_BOUND) {
+    raw = 0;
+  }
+  //Serial.printf("pattern_change_raw: %d\n", raw);
+  return (bool)constrain(map(raw, 0, ANALOG_UPPER_BOUND, 0, 3), 0, 1);
 }
 
 // setup() runs once, when the device is first turned on.
@@ -161,6 +174,7 @@ void setup() {
 
   currentPalette = palettes[0];
   autoPatternChange = readAutoPatternChange();
+  Serial.printlnf("auto pattern changing: %d", autoPatternChange);
 
   // read initial values from potentiometers for brightness
   gBrightness = readBrightnessFromPot();
@@ -176,6 +190,7 @@ void setup() {
   // reset pattern from potentiometer
   gPattern = readModeFromPot();
   gPalette = 0;
+  Serial.printlnf("pattern initial setting: %d", gPattern);
 
   t_boot = millis();
   Serial.println("booted up");
@@ -333,8 +348,12 @@ const FP patternBank[] = {
 
 // read from mode potentiometer, returning which program to run
 uint8_t readModeFromPot() {
-  int rawMode = analogRead(MODE_POT_PIN); // 0-1023
-  return map(rawMode, 0, 1023, 0, NUM_PATTERNS-1);
+  int rawMode = analogRead(MODE_POT_PIN); // 0-ANALOG_UPPER_BOUND
+  if (rawMode < ANALOG_LOWER_BOUND) {
+    rawMode = 0;
+  }
+  Serial.printf("mode raw: %d\n", rawMode);
+  return map(rawMode, 0, ANALOG_UPPER_BOUND, 0, NUM_PATTERNS-1);
 }
 
 
@@ -385,10 +404,14 @@ void loop() {
   }
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS
-  if (autoPatternChange && (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_MS)) {
-    gPattern++;
-    t_pattern_start = t_now;
-    Serial.printlnf("pattern->%d", gPattern);
+  if (autoPatternChange) {
+    if (t_now > t_pattern_start+PATTERN_CHANGE_INTERVAL_MS) {
+      gPattern++;
+      t_pattern_start = t_now;
+      Serial.printlnf("auto pattern->%d", gPattern);
+    }
+  } else {
+    gPattern = readModeFromPot();
   }
 
   // increment palette every PALETTE_CHANGE_INTERVAL_MS
