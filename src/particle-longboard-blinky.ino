@@ -25,10 +25,10 @@ FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
 SYSTEM_THREAD(ENABLED);
 
-// analogRead claims 1023 is upper bound (10bit)
-// but on particle im seeing 4095 (12 bit register)
-#define ANALOG_UPPER_BOUND 4095
-#define ANALOG_LOWER_BOUND 300
+// the pots i have have an odd plateau at 3095, so to make things easier
+// lets just assume this is the upper bound
+#define ANALOG_POT_UPPER_BOUND 3095
+#define ANALOG_POT_LOWER_BOUND 300
 
 #define BRIGHTNESS_POT_PIN A1
 #define MODE_POT_PIN A2
@@ -127,24 +127,28 @@ void accel_positionInterruptHandler() {
 	accel_positionInterrupt = true;
 }
 
+// reads an analog pin and returns a clean value between 0-255 inclusive
+uint8_t readPotValue(int pin, int low_threshold, int high_threshold) {
+  int raw = analogRead(pin);
+  // first constrain the values so we have a stable floor and ceiling
+  int constrained = constrain(raw, low_threshold, high_threshold);
+  uint8_t mapped = map(constrained, low_threshold, high_threshold, 0, 255);
+  return mapped;
+}
+
 // reads intended brightness level from potentiometer
 // and maps it into an acceptable brightness value
 uint8_t readBrightnessFromPot() {
-  int rawBrightness = analogRead(BRIGHTNESS_POT_PIN); // 0-ANALOG_UPPER_BOUND
-  if (rawBrightness < ANALOG_LOWER_BOUND) {
-    rawBrightness = 0;
+  int raw = readPotValue(BRIGHTNESS_POT_PIN, ANALOG_POT_LOWER_BOUND, ANALOG_POT_UPPER_BOUND);
+  if (raw < 10) {
+    raw = 10; // set a minimum brightness
   }
-  //Serial.printf("brightness raw: %d\n", rawBrightness);
-  return map(rawBrightness, 0, ANALOG_UPPER_BOUND, 10, 255);
+  return raw;
 }
 
 bool readAutoPatternChange() {
-  int raw = analogRead(AUTO_PATTERN_PIN); // 0-ANALOG_UPPER_BOUND
-  if (raw < ANALOG_LOWER_BOUND) {
-    raw = 0;
-  }
-  //Serial.printf("pattern_change_raw: %d\n", raw);
-  return (bool)constrain(map(raw, 0, ANALOG_UPPER_BOUND, 0, 3), 0, 1);
+  int raw = readPotValue(AUTO_PATTERN_PIN, 250, 2000);
+  return (bool)constrain(map(raw, 0, 255, 0, 3), 0, 1);
 }
 
 // setup() runs once, when the device is first turned on.
@@ -155,7 +159,7 @@ void setup() {
   xAccelAvg.clear();
 
   // chill for a sec
-  delay( 4000 );
+  // delay( 4000 );
   Serial.println("setting up accelerometer");
 
   // initialize i2c wire; photon has only 1 wire bus WKP (D0,D1)
@@ -348,12 +352,8 @@ const FP patternBank[] = {
 
 // read from mode potentiometer, returning which program to run
 uint8_t readModeFromPot() {
-  int rawMode = analogRead(MODE_POT_PIN); // 0-ANALOG_UPPER_BOUND
-  if (rawMode < ANALOG_LOWER_BOUND) {
-    rawMode = 0;
-  }
-  Serial.printf("mode raw: %d\n", rawMode);
-  return map(rawMode, 0, ANALOG_UPPER_BOUND, 0, NUM_PATTERNS-1);
+  int raw = readPotValue(MODE_POT_PIN, ANALOG_POT_LOWER_BOUND, ANALOG_POT_UPPER_BOUND);
+  return map(raw, 0, 255, 0, NUM_PATTERNS-1);
 }
 
 
@@ -362,7 +362,6 @@ void loop() {
   t_now = millis();
 
   // update brightness values
-  // TODO: each analog read is 100us, should be conditionalize this?
   gBrightness = readBrightnessFromPot();
   autoPatternChange = readAutoPatternChange();
 
