@@ -133,6 +133,7 @@ uint8_t readPotValue(int pin, int low_threshold, int high_threshold) {
   // first constrain the values so we have a stable floor and ceiling
   int constrained = constrain(raw, low_threshold, high_threshold);
   uint8_t mapped = map(constrained, low_threshold, high_threshold, 0, 255);
+  Serial.printlnf("pot %d, %d, %d", raw, constrained, mapped);
   return mapped;
 }
 
@@ -337,7 +338,7 @@ void pattern_palette_waves() {
 bool accelIsBraking() {
   //TODO(gabe) figure out thresholds and directions
   int avg = xAccelAvg.getAverage();
-  Serial.printlnf("accel x=%d", avg);
+  //Serial.printlnf("accel x=%d", avg);
   return avg < -15;
 }
 
@@ -363,6 +364,7 @@ void loop() {
 
   // update brightness values
   gBrightness = readBrightnessFromPot();
+  Serial.printlnf("brightness: %d", gBrightness);
   autoPatternChange = readAutoPatternChange();
 
   // get a sample from accelerometer
@@ -440,6 +442,7 @@ void loop() {
     }
   }
 
+  gLED->setBrightness(gBrightness);
   gLED->show();
   delay(1000 / UPDATES_PER_SECOND);
   //gLED->delay(1000 / UPDATES_PER_SECOND);
