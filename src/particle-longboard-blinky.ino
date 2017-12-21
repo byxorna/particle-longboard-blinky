@@ -34,7 +34,7 @@ SYSTEM_THREAD(ENABLED);
 #define MODE_POT_PIN A2
 #define AUTO_PATTERN_PIN A3
 #define CLOCK_PIN D4
-#define NUM_LEDS_PER_STRIP 24
+#define NUM_LEDS_PER_STRIP 37
 #define NUM_STRIPS 2
 
 #define LED_TYPE NEOPIXEL
@@ -73,7 +73,7 @@ LIS3DHSample accel_prev;
 LIS3DHI2C accel(Wire, 0, WKP);
 volatile bool accel_positionInterrupt = false;
 uint8_t accel_lastPos = 0;
-RunningAverage xAccelAvg(BRAKING_SAMPLE_WINDOW);
+RunningAverage xAccelAvg(BRAKING_SAMPLE_WINDOW);  // running average over 5*100ms polling windows
 
 uint8_t gBrightness; // global brightness, read from potentiometer
 uint8_t gPattern; // global pattern
