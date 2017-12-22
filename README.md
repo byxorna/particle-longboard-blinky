@@ -1,8 +1,18 @@
 # particle-longboard-blinky
 Particle Photon arduino code for longboard LEDs
 
-Heres a video!
+### Video Demo
+
 [![Longboard LEDs](https://img.youtube.com/vi/8PvM0YsKJ70/0.jpg)](https://www.youtube.com/watch?v=8PvM0YsKJ70)
+
+### Pics of the project box
+
+![project box 1](https://github.com/byxorna/particle-longboard-blinky/raw/master/assets/IMG_20171216_234342.jpg "Project Box 1")
+
+![project box 2](https://github.com/byxorna/particle-longboard-blinky/raw/master/assets/IMG_20171217_181922.jpg "Project Box 2")
+
+![project box 3](https://github.com/byxorna/particle-longboard-blinky/raw/master/assets/IMG_20171221_202844.jpg "Project Box 3")
+
 
 Includes:
 * particle photon as the brains
