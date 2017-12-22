@@ -205,7 +205,7 @@ void setup() {
 void pattern_slow_pulse() {
   // pick a color, and pulse it 
   //uint8_t bpm = beatsin8(4, 8, 16);
-  uint8_t cBrightness = beatsin8(50, 0, 255);
+  uint8_t cBrightness = beatsin8(50, 100, 255);
   uint8_t cHue = beatsin8(6, 0, 255); // cycle colors every 30s
   CHSV hsv_led = CHSV(cHue, 255, cBrightness);
   CRGB rgb_led;
