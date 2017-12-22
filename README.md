@@ -1,6 +1,20 @@
 # particle-longboard-blinky
 Particle Photon arduino code for longboard LEDs
 
+Heres a video!
+[![Longboard LEDs](https://img.youtube.com/vi/8PvM0YsKJ70/0.jpg)](https://www.youtube.com/watch?v=8PvM0YsKJ70)
+
+Includes:
+* particle photon as the brains
+* accelerometer
+  * for braking detection (red hold for 3 sec)
+  * orientation detection (cylon pattern when not wheels-down)
+* lipo battery integrated with charging circuit
+* on/off switch
+* auto/manual patter select switch
+* potentiometer for brightness control
+* potentiometer for pattern selection when in manual mode
+
 ## Setup
 
 ```
