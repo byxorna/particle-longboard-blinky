@@ -339,7 +339,11 @@ bool accelIsBraking() {
   //TODO(gabe) figure out thresholds and directions
   int avg = xAccelAvg.getAverage();
   //Serial.printlnf("accel x=%d", avg);
-  return avg < -15;
+  //return avg < -15;
+  // NOTE(gabe): disabled braking detection because on bumpy roads it continually thinks
+  // its braking. This breaks up the nice patterns, so until we figure this out lets
+  // disable this.
+  return false;
 }
 
 /** update this with patterns you want to be cycled through **/
