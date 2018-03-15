@@ -51,8 +51,8 @@ SYSTEM_THREAD(ENABLED);
 #define AUTO_CHANGE_PALETTE 1
 
 // accelerometer stuff
-#define ACCEL_POSITION_NORMAL 5
-#define ACCEL_POSITION_UPSIDEDOWN 4
+#define ACCEL_POSITION_WHEELS_DOWN 6
+#define ACCEL_POSITION_UPSIDE_DOWN 4
 #define ACCEL_POSITION_A 3
 #define ACCEL_POSITION_B 2
 #define ACCEL_POSITION_C 1
@@ -123,8 +123,8 @@ TBlendType currentBlending = LINEARBLEND;
 CRGB leds[NUM_STRIPS*NUM_LEDS_PER_STRIP]; //[NUM_STRIPS][NUM_LEDS_PER_STRIP];
 
 void accel_positionInterruptHandler() {
-  Serial.println("accelerometer position changed");
-	accel_positionInterrupt = true;
+  //Serial.println("accelerometer position changed");
+  accel_positionInterrupt = true;
 }
 
 // reads an analog pin and returns a clean value between 0-255 inclusive
@@ -133,7 +133,7 @@ uint8_t readPotValue(int pin, int low_threshold, int high_threshold) {
   // first constrain the values so we have a stable floor and ceiling
   int constrained = constrain(raw, low_threshold, high_threshold);
   uint8_t mapped = map(constrained, low_threshold, high_threshold, 0, 255);
-  Serial.printlnf("pot %d, %d, %d", raw, constrained, mapped);
+  //Serial.printlnf("pot %d, %d, %d", raw, constrained, mapped);
   return mapped;
 }
 
@@ -368,7 +368,7 @@ void loop() {
 
   // update brightness values
   gBrightness = readBrightnessFromPot();
-  Serial.printlnf("brightness: %d", gBrightness);
+  // Serial.printlnf("brightness: %d", gBrightness);
   autoPatternChange = readAutoPatternChange();
 
   // get a sample from accelerometer
@@ -398,14 +398,15 @@ void loop() {
   if (accel_positionInterrupt) {
     accel_positionInterrupt = false;
     // Test the position interrupt support. Normal result is 5.
-		// 5: normal position, with the accerometer facing up
-		// 4: upside down
-		// 1 - 3: other orientations
-		uint8_t pos = accel.readPositionInterrupt();
-		if (pos != 0 && pos != accel_lastPos) {
-			Serial.printlnf("acc pos=%d", pos);
-			accel_lastPos = pos;
-		}
+    // 6: wheels down
+    // 5: normal position, with the accerometer facing up
+    // 4: upside down
+    // 1 - 3: other orientations
+    uint8_t pos = accel.readPositionInterrupt();
+    if (pos != 0 && pos != accel_lastPos) {
+      Serial.printlnf("acc pos=%d", pos);
+      accel_lastPos = pos;
+    }
   }
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS
@@ -433,9 +434,10 @@ void loop() {
   if (t_boot + BOOTUP_ANIM_DURATION_MS > t_now) {
     // display a bootup pattern for a bit
     pattern_bootup();
-  } else if (accel_lastPos == ACCEL_POSITION_NORMAL) {
-    // pause pattern, cause we are actually upside down!
-    pattern_cylon_eye();
+  } else if (accel_lastPos != ACCEL_POSITION_WHEELS_DOWN) {
+    // turn off when we are not wheels down
+    //pattern_cylon_eye();
+    pattern_clear();
   } else if (braking || (!braking && (t_brake_end+BRAKE_HOLD_MS > t_now))) {
     pattern_brake_light();
   } else {
