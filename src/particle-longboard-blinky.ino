@@ -215,6 +215,24 @@ void pattern_slow_pulse() {
   }
 }
 
+void pattern_slow_pulse_with_sparkles() {
+  // pick a color, and pulse it 
+  //uint8_t bpm = beatsin8(4, 8, 16);
+  uint8_t cBrightness = beatsin8(50, 100, 255);
+  uint8_t cHue = beatsin8(6, 0, 255); // cycle colors every 30s
+  CHSV hsv_led = CHSV(cHue, 255, cBrightness);
+  CRGB rgb_led;
+  hsv2rgb_rainbow(hsv_led, rgb_led);
+  for( int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; i++) {
+    if (random(NUM_LEDS_PER_STRIP*NUM_STRIPS*3) == 0) {
+      // one led (on average) will be a sparkle
+      leds[i] = CRGB::White;
+    } else {
+      leds[i] = rgb_led;
+    }
+  }
+}
+
 void pattern_cylon_eye() {
   // cylon eye is 4 pixels wide, +/++ base index
   // we map a 60bpm(1s) cycle into 0..num leds-1
@@ -242,11 +260,16 @@ void pattern_bootup() {
   uint8_t baseHue = beatsin8(30, 0, 255);
   uint8_t iHue = 0;
   for(int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; ++i) {
-    iHue = addmod8(baseHue, 1, 255);
-    CHSV hsv_led = CHSV(iHue, 255, 255);
-    CRGB rgb_led;
-    hsv2rgb_rainbow(hsv_led, rgb_led);
-    leds[i] = rgb_led;
+    if (random(NUM_LEDS_PER_STRIP*NUM_STRIPS) == 0) {
+      // one led (on average) will be a sparkle
+      leds[i] = CRGB::White;
+    } else {
+      iHue = addmod8(baseHue, 1, 255);
+      CHSV hsv_led = CHSV(iHue, 255, 255);
+      CRGB rgb_led;
+      hsv2rgb_rainbow(hsv_led, rgb_led);
+      leds[i] = rgb_led;
+    }
   }
 }
 
@@ -260,6 +283,22 @@ void pattern_rainbow_waves() {
     leds[i] = rgb_led;
   }
 }
+
+void pattern_rainbow_waves_with_sparkles() {
+  for(int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; ++i) {
+    if (random(NUM_LEDS_PER_STRIP*NUM_STRIPS*3) == 0) {
+      // one led (on average) will be a sparkle
+      leds[i] = CRGB::White;
+    } else {
+      uint8_t h = (t_now/8+i)%256;
+      CHSV hsv_led = CHSV(h, 255, 255);
+      CRGB rgb_led;
+      hsv2rgb_rainbow(hsv_led, rgb_led);
+      leds[i] = rgb_led;
+    }
+  }
+}
+
 
 void pattern_clear() {
   for( int i = 0; i < NUM_LEDS_PER_STRIP*NUM_STRIPS; i++) {
@@ -350,9 +389,9 @@ bool accelIsBraking() {
 #define NUM_PATTERNS sizeof(patternBank) / sizeof(FP)
 const FP patternBank[] = {
   &pattern_from_palette,
-  &pattern_slow_pulse,
+  &pattern_slow_pulse_with_sparkles,
   &pattern_palette_waves,
-  &pattern_rainbow_waves
+  &pattern_rainbow_waves_with_sparkles
 };
 
 // read from mode potentiometer, returning which program to run
