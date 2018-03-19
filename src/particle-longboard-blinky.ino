@@ -20,6 +20,7 @@ typedef void (*FP)();
 #include "FastLED.h"
 #include "LIS3DH.h"
 #include "RunningAverage.h"
+#include "CircularBuffer.h"
 
 FASTLED_USING_NAMESPACE;
 SYSTEM_MODE(SEMI_AUTOMATIC);
@@ -58,6 +59,7 @@ SYSTEM_THREAD(ENABLED);
 #define ACCEL_POSITION_C 1
 #define ACCEL_POLL_INTERVAL_MS 100
 #define BRAKING_SAMPLE_WINDOW 5
+#define ORIENTATION_SAMPLES 10
 
 void accel_positionInterruptHandler();
 LIS3DHSample accel_now; // accelerometer value last sampled
@@ -69,11 +71,11 @@ LIS3DHSample accel_prev;
 // SCL: Connect to D1 (I2C SCL)
 // SDA: Connect to D0 (I2C SDA)
 // INT: WKP
-//LIS3DHI2C* accel = new LIS3DHI2C(0, WKP);
 LIS3DHI2C accel(Wire, 0, WKP);
 volatile bool accel_positionInterrupt = false;
-uint8_t accel_lastPos = 0;
 RunningAverage xAccelAvg(BRAKING_SAMPLE_WINDOW);  // running average over 5*100ms polling windows
+uint8_t accel_lastPos = 0;
+CircularBuffer<uint8_t,ORIENTATION_SAMPLES> orientationSamples;
 
 uint8_t gBrightness; // global brightness, read from potentiometer
 uint8_t gPattern; // global pattern
@@ -376,7 +378,7 @@ void pattern_palette_waves() {
 // indicate we are agressively braking
 bool accelIsBraking() {
   //TODO(gabe) figure out thresholds and directions
-  int avg = xAccelAvg.getAverage();
+  //int avg = xAccelAvg.getAverage();
   //Serial.printlnf("accel x=%d", avg);
   //return avg < -15;
   // NOTE(gabe): disabled braking detection because on bumpy roads it continually thinks
@@ -442,10 +444,23 @@ void loop() {
     // 4: upside down
     // 1 - 3: other orientations
     uint8_t pos = accel.readPositionInterrupt();
+    orientationSamples.push(pos);
+    // iterate over orientationSamples and update accel_lastPos iff...
+    for (int x = 0; x < orientationSamples.size(); ++x) {
+      if (orientationSamples[x] == ACCEL_POSITION_WHEELS_DOWN) {
+        // short circuit, just assume we are wheels down, because we want any number of
+        // sampled values in the buffer that are wheels down to make us light up.
+        pos = ACCEL_POSITION_WHEELS_DOWN;
+        break;
+      }
+    }
+    accel_lastPos = pos;
+    /*
     if (pos != 0 && pos != accel_lastPos) {
       Serial.printlnf("acc pos=%d", pos);
       accel_lastPos = pos;
     }
+    */
   }
 
   // increment pattern every PATTERN_CHANGE_INTERVAL_MS
